@@ -21,6 +21,8 @@ def bootstrap():
 
     aws = AmazonWebServices()
 
+
+    cf = CloudFlare()
  
 
 
@@ -112,7 +114,7 @@ def bootstrap():
             # Retrieve github token
             token = body.token
             # Instantiate github client
-            # github = GithubService(body.token)
+            github = GitHubService(body.token)
             # Instantiate Docker client
             docker = DockerService()
             # Create Docker volume
@@ -120,7 +122,7 @@ def bootstrap():
             # Create App container
             _app = await docker.create_container(body, volume)
             # Provision App Container [ERROR]
-            #dns_app = await cf.provision(body.login + "-" + body.repo, _app.host_port)
+            dns_app = await cf.provision(body.login + "-" + body.repo, _app.host_port)
 
             # instantiate IDE container
             ide = ContainerCreate(
@@ -133,11 +135,11 @@ def bootstrap():
             # Create IDE container
             codeserver = await docker.create_code_server(ide, volume)
             # Provision IDE container
-            #dns_codeserver = await cf.provision(
-            #    body.login + "-" + body.image, codeserver.host_port
-            #)
+            dns_codeserver = await cf.provision(
+                body.login + "-" + body.image, codeserver.host_port
+            )
             # Create Repo from template
-            '''repo_response = await github.create_repo_from_template(
+            repo_response = await github.create_repo_from_template(
                 RepoTemplateCreate(
                     name=body.repo,
                     template_owner="obahamonde",
@@ -148,29 +150,22 @@ def bootstrap():
                 )
             )
             assert isinstance(repo_response, dict)
-            '''
+            
             # Construct response payload
             preview = {
-                "url": f"http://localhost:{_app.host_port}",
-                "ip": f"http://localhost:{_app.host_port}",
-                "container": _app.container_id,
-                "repo": 1#repo_response["html_url"],
-            }
+            "url": dns_app["url"],
+            "ip": f"{env.IP_ADDR}:{_app.host_port}",
+            "container": _app.container_id,
+            "repo": 1#repo_response["html_url"],
+        }
             workspace = {
-                "url":f"http://localhost:{codeserver.host_port}",
-                "ip": f"http://localhost:{codeserver.host_port}",
-                "container": codeserver.container_id,
-            }
+            "url": dns_codeserver["url"],
+            "ip": f"{env.IP_ADDR}:{codeserver.host_port}",
+            "container": codeserver.container_id,
+        }
             return {"workspace": workspace, "preview": preview}
         except Exception as e:
             raise e   
             
-        
-        
-        
-    
-    
-    
-    
-                
+                 
     return app

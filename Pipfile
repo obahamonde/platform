@@ -9,8 +9,9 @@ jinja2 = "*"
 aioboto3 = "*"
 rich = "*"
 gunicorn = "*"
+click = "*"
 
 [dev-packages]
 
 [requires]
-python_version = "3.9"
+python_version = "3.10"
