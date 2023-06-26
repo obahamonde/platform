@@ -1,0 +1,1 @@
+ gunicorn main:app --bind 0.0.0.0:8080 --worker-class aiohttp.GunicornWebWorker --workers 5 --threads 2 --timeout 0 --reload

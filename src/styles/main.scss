@@ -1,0 +1,160 @@
+@import "./markdown.css";
+
+$primary: #04989e;
+$secondary: #e1f8f9;
+$accent: #5957fc;
+$warning: #fead04;
+$danger: #f00a00;
+$info: #a6a6a6;
+$success: #21fdad;
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+html.dark {
+  background: #121212;
+  color-scheme: dark;
+}
+
+.box {
+  @apply relative w-full h-12 bg-gray-200 flex items-center justify-center overflow-hidden;
+  border-radius: 10px;
+  span {
+    @apply absolute bg-secondary;
+    inset: 3px;
+    border-radius: 10px;
+    z-index: 2;
+    input {
+      @apply w-full h-full bg-transparent text-black text-xl p-4 relative no-outline;
+      &:focus {
+        outline: none;
+        box-shadow: none;
+      }
+    }
+  }
+  &:after {
+    content: "";
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    transition: all 0.3s ease;
+  }
+  &:before {
+    content: "";
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    transition: all 0.3s ease;
+  }
+}
+
+.box-animation {
+  &:before {
+    animation: animateInputBorder 4s linear infinite;
+    animation-delay: -2s;
+    background-image: conic-gradient(
+      transparent,
+      transparent,
+      transparent,
+      $success
+    );
+  }
+  &:after {
+    animation: animateInputBorder 4s linear infinite;
+    background-image: conic-gradient(
+      transparent,
+      transparent,
+      transparent,
+      $primary
+    );
+  }
+}
+
+.form-container {
+  @apply bg-info overflow-hidden relative w-6/12 inline-flex items-center;
+  @apply transition-[0.5s] min-h-[540px] z-[1] px-0 py-[70px] rounded-[10px];
+}
+
+.form-wraper {
+  @apply absolute w-full px-8;
+  transition: 0.5s ease-in-out;
+  .input-group {
+    @apply my-5;
+  }
+}
+
+.bg-gradient-primary {
+  background-clip: content-box, border-box;
+  background-image: linear-gradient(
+      rgba(255, 255, 255, 0),
+      rgba(255, 255, 255, 0)
+    ),
+    linear-gradient(90deg, $success, $primary);
+}
+
+.action-button button {
+  @extend .bg-gradient-primary;
+  @apply text-xl shadow-[0_0_6px_0_$primary50] bg-origin-border shadow-none text-[$secondary] w-full transition-all duration-[0.3s] ease-ease mt-[30px] px-12 py-2 p-2.5 rounded-[10px] border-solid border-transparent;
+  &:hover {
+    color: $primary;
+    box-shadow: 2px 1000px 1px $secondary inset;
+  }
+}
+
+.main-form-container {
+  @apply min-w-[800px] bg-[rgba(0,0,0,0)] relative h-[400px] flex items-center rounded-[10px];
+}
+.bg-btn-container {
+  @apply flex items-center justify-around absolute w-full h-full top-0 left-0 z-0;
+}
+
+.left-right {
+  @apply translate-x-100 ease-in-out duration-500;
+  .login-form {
+    @apply -translate-x-100 ease-in-out duration-500;
+  }
+  .signUp-form {
+    @apply translate-x-0 ease-in-out duration-500;
+  }
+}
+
+.right-left {
+  @apply translate-x-0 ease-in-out duration-500;
+  .login-form {
+    @apply translate-x-0 ease-in-out duration-500;
+  }
+  .signUp-form {
+    @apply translate-x-100 ease-in-out duration-500;
+  }
+}
+
+.social-login {
+  @apply row center px-4 py-2 cp gap-4 bg-gradient-primary;
+  .social-btn {
+    @apply icon-btn;
+  }
+}
+
+.logo {
+  will-change: filter;
+  transition: filter 300ms;
+}
+
+.logo:hover {
+  filter: drop-shadow(0 0 2em #fff);
+  cursor: pointer;
+}
+
+@keyframes animateInputBorder {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
