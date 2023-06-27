@@ -4,6 +4,9 @@ from typing import *
 from aiofauna import BaseModel
 from aiofauna import FaunaModel as Model
 from aiofauna import Field as Data
+from urllib3 import response
+
+from ..templates import Context
 
 Scalar = Union[str, int, float, bool, None]
 
@@ -25,29 +28,19 @@ class User(Model):
     updated_at: Optional[str] = Data(default=None)
     source: Literal["auth0", "github", "cognito"] = Data(default="auth0", index=True)
 
-
-class Message(Model):
-    """
-    Message whethere from a Human-Human or Human-Bot conversation
-    """
-
-    content: str = Data(..., description="Message content")
-    author: str = Data(..., description="Message author")
-    tokens: int = Data(..., description="Message tokens")
-
-
-class Chat(Model):
+class ChatGpt(Model):
     """
 
     Chat
 
-
     """
 
-    name: str = Data(..., description="Chat name", unique=True)
-    messages: List[Message] = Data(..., description="Chat messages")
-
-
+    user: str = Data(..., description="User reference", index=True)
+    prompt:str = Data(..., description="Prompt message")
+    response: str = Data(..., description="Response message")
+    context: List[Context] = Data(..., description="Context")
+    tokens: int = Data(..., description="Tokens")
+             
 class Upload(Model):
     """
 
@@ -66,5 +59,3 @@ class Upload(Model):
         index=True,
     )
     url: Optional[str] = Data(None, description="File url")
-
-

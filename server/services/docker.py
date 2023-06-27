@@ -74,13 +74,6 @@ class CodeServer(Model):
         git_startup_script = f"""
         set -e\n
         export HOME=/root\n
-        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash\n
-        export NVM_DIR="$HOME/.nvm"\n
-        [ -s "$NVM_DIR/nvm.sh" ] && \\. "$NVM_DIR/nvm.sh"\n
-        [ -s "$NVM_DIR/bash_completion" ] && \\. "$NVM_DIR/bash_completion"\n
-        nvm install 16\n
-        nvm use 16\n
-        npm install -g yarn\n
         export PATH=$PATH:/app/code-server/bin\n
         export GIT_TERMINAL_PROMPT=0\n
         export GIT_SSH_COMMAND="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"\n
@@ -94,6 +87,7 @@ class CodeServer(Model):
         for extension in extensions:
             git_startup_script += f"code-server --install-extension {extension}\n"
         git_startup_script += """
+        chmod 777 /config/workspace\n
         code-server --disable-telemetry
         """
         

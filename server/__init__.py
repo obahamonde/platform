@@ -21,43 +21,47 @@ def bootstrap():
 
     aws = AmazonWebServices()
 
-
     cf = CloudFlare()
  
-
-
-
     @app.get("/api/user")
     async def users():
         return await User.all()
 
-
     @app.post("/api/chat")
     async def completion(request: ChatCompletionRequest):
-        instance = await User.get(request.user)
-        assert isinstance(instance, User)
-        user = instance.name
-        response = await openai.get_completion(request)
-        # Retrieve embeddings from Ada
-        user_embedding = await openai.get_embeddings(EmbeddingRequest(input=request.prompt))
-        open_ai_embedding = await openai.get_embeddings(
-            EmbeddingRequest(input=response.choices[0].message.content)
-        )
-        # Insert Messages into FaunaDB
-        chatgpt_message, user_message = (
-            await Message(
-                content=response.choices[0].message.content,
-                author="openai",
-                tokens=response.usage.completion_tokens,
-            ).save(),
-            await Message(
-                content=request.prompt, author=user, tokens=response.usage.prompt_tokens
-            ).save(),
-        )
-        await pinecone.upsert(EmbeddingUpsert(id=chatgpt_message.ref, vector=open_ai_embedding.data[0].embedding))  # type: ignore
-        await pinecone.upsert(EmbeddingUpsert(id=user_message.ref, vector=user_embedding.data[0].embedding))  # type: ignore
-        return response.choices[0].message.content
-
+        tokens = 0
+        ref = request.user
+        prompt_request = request.prompt
+        # Similarity Search
+        user_ada_response = await openai.get_embeddings(EmbeddingRequest(input=prompt_request))        
+        tokens += user_ada_response.usage.total_tokens
+        user_embedding = user_ada_response.data[0].embedding
+        pinecone_response = await pinecone.query(EmbeddingQuery(vector=user_embedding))
+        pinecone_matches = pinecone_response.matches
+        context = [Context(key=match.metadata["text"],value=match.score) for match in pinecone_matches]
+        # Get the response from OpenAI
+        request.context = context
+        openai_response = await openai.get_completion(request)
+        gpt_response = openai_response.choices[0].message.content
+        tokens += openai_response.usage.total_tokens
+        # Retrieve GPT Embedding
+        gpt_ada_response = await openai.get_embeddings(EmbeddingRequest(input=gpt_response))
+        gpt_embedding = gpt_ada_response.data[0].embedding
+        tokens += gpt_ada_response.usage.total_tokens
+        # Upsert the embeddings on Pinecone
+        await pinecone.upsert(EmbeddingUpsert(vector=user_embedding, id=str(uuid4()), metadata={"text": prompt_request}))
+        await pinecone.upsert(EmbeddingUpsert(vector=gpt_embedding, id=str(uuid4()), metadata={"text": gpt_response}))
+        # Return the response
+        return await ChatGpt(
+            user=ref,
+            prompt=prompt_request,
+            response=gpt_response,
+            tokens=tokens,
+            context=context,
+        ).save()
+        
+        
+  
   
     @app.post("/api/upload")
     async def upload(request: Request):
@@ -166,6 +170,6 @@ def bootstrap():
             return {"workspace": workspace, "preview": preview}
         except Exception as e:
             raise e   
-            
+   
                  
     return app

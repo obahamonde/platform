@@ -59,3 +59,4 @@ class AmazonWebServices:
             ).save()
             assert isinstance(response, Upload)
             return response
+

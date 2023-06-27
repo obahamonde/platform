@@ -7,6 +7,24 @@ from pydantic import Field as Data
 from ..config import env
 from ..templates import Context, SystemMessageTemplate
 
+Schema = Dict[str, Any]
+
+class FunctionModel(BaseModel):
+    @classmethod
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        if cls.__doc__ is None:
+            raise TypeError(f"OpenAI FunctionSchema {cls.__name__} must have a description")
+        json_schema = cls.schema()
+        cls.function = {
+            "name": json_schema["title"],
+            "description": cls.__doc__,
+            "parameters": {
+                "type": json_schema["type"],
+                "properties": json_schema["properties"],
+                "required": json_schema["required"],
+            },
+        }
 
 class ChatMessage(BaseModel):
     """
@@ -47,7 +65,7 @@ class ChatRequest(BaseModel):
         description="What we call the 'creativity' of the AI. 0.0 is very conservative (highly repetitive), 1.0 is very creative (may say strange things or diverge from the topic at hand).",
     )
     max_tokens: int = Data(
-        default=1024,
+        default=2048,
         description="The maximum number of tokens to generate. Requests can use up to 2048 tokens shared between prompt and completion.",
     )
     top_p: float = Data(
@@ -62,21 +80,16 @@ class ChatRequest(BaseModel):
         default=0.25,
         description="What we call the 'creativity' of the AI. 0.0 is very conservative (highly repetitive), 1.0 is very creative (may say strange things or diverge from the topic at hand).",
     )
-    stop: List[str] = Data(
-        default=["[end]"],
-        description="One or more sequences where the API will stop generating further tokens. The returned text will not contain the stop sequence.",
-    )
     n: int = Data(
         default=1, description="The number of completions to generate for each prompt."
     )
 
-    def render(self, user: str, prompt: str, context: List[Context], **kwargs):
-        super().__init__(**kwargs)
+    def render(self, user: str, prompt: str, context: List[Context], role:str):
         self.messages = [
             ChatMessage(role="user", content=prompt),
             ChatMessage(
                 role="assistant",
-                content=SystemMessageTemplate(name=user, context=context).render(),
+                content=SystemMessageTemplate(name=user, context=context, role=role).render(),
             ),
         ]
         return self
@@ -146,7 +159,7 @@ class ChatResponse(BaseModel):
 class ChatCompletionRequest(BaseModel):
     """
     ChatCompletionRequest
-        - model: str
+        - user: str
         - prompt: str
         - context: List[Context]
     """
@@ -154,7 +167,7 @@ class ChatCompletionRequest(BaseModel):
     user: str = Data(..., description="The ref of the user")
     prompt: str = Data(..., description="The prompt to send to the AI")
     context: List[Context] = Data(..., description="The context to send to the AI")
-
+    role: str = Data("assistant", description="The role that the chatbot should play")
 
 class EmbeddingRequest(BaseModel):
     """
@@ -196,7 +209,6 @@ class EmbeddingUsage(BaseModel):
 class EmbeddingResponse(BaseModel):
     """
     EmbeddingResponse
-        - id: str
         - object: str
         - data: List[EmbeddingItem]
         - model: str

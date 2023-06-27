@@ -28,13 +28,12 @@ class EmbeddingUpsert(BaseModel):
 class EmbeddingQuery(BaseModel):
     """
     EmbeddingQuery
-        - namespace: str
         - topK: int
         - embedding: List[float]
     """
 
     topK: int = Data(default=1, description="The number of results to return.")
-    embedding: List[float] = Data(..., description="The vector of the embedding")
+    vector: List[float] = Data(..., description="The vector of the embedding")
 
 
 class SparsedValues(BaseModel):
@@ -64,6 +63,7 @@ class EmbeddingMatch(BaseModel):
     sparseValues: SparsedValues = Data(
         ..., description="The sparse values of the embedding."
     )
+    metadata: Dict[str, str] = Data(..., description="The metadata of the embedding.")
 
 
 class EmbeddingResponse(BaseModel):
@@ -98,7 +98,7 @@ class PineConeService(ApiClient):
 
     async def query(self, request: EmbeddingQuery):
         response = await self.fetch(
-            "/vectors/query", method="POST", json=request.dict()
+            "/query", method="POST", json=request.dict()
         )
-        assert isinstance(response, dict)
         return EmbeddingResponse(**response)
+        

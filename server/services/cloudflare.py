@@ -13,6 +13,9 @@ class CloudFlare(ApiClient):
         "X-Auth-Key": env.CF_API_KEY,
         "Content-Type": "application/json",
     }
+    
+    def __init__(self):
+        super().__init__(self.base_url, headers=self.headers)
 
     async def provision(self, name: str, port: int):
         """

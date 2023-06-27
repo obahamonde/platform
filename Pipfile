@@ -10,6 +10,7 @@ aioboto3 = "*"
 rich = "*"
 gunicorn = "*"
 click = "*"
+aiohttp-cors = "*"
 
 [dev-packages]
 

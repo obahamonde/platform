@@ -18,9 +18,7 @@ class Context(BaseModel):
 
 class SystemMessageTemplate(BaseModel):
     context: List[Context] = Data(..., description="The context of the message")
-    persona: str = Data(
-        default="github copilot x", description="The role that the LLM should play"
-    )
+    role: str = Data("assistant", description="The role of the user")
     name: str = Data(..., description="The name of the user")
     template: str = Data(default="base.j2", description="The Template to use")
 
@@ -29,5 +27,5 @@ class SystemMessageTemplate(BaseModel):
 
     def render(self):
         return self.get_template().render(
-            **{"name": self.name, "role": self.persona, "context": self.context}
+            **{"name": self.name, "role": self.role, "context": self.context}
         )

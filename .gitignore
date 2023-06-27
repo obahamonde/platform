@@ -13,3 +13,5 @@ logs
 logs
 static
 *.env
+export.sh
+wordpress
