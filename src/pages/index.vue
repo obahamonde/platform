@@ -1,66 +1,54 @@
 <script setup lang="ts">
-const modal = ref(false);
-const send = async (output: string) => {
-  if (output.length == 0) return;
-  alert(output);
-  modal.value = false;
-};
-const chat = ref(false);
-const footer = ref(false);
-const toggleChat = () => {
-  chat.value = !chat.value;
-  if (chat.value) {
-    modal.value = false;
+const url = ref("");
+const sse = ref(null) as Ref<EventSource | null>;
+const showBot = ref(false);
+const prompt_ = ref("");
+watch(url, (newUrl) => {
+  if (sse.value) {
+    sse.value.close();
   }
-};
-watch(
-  () => modal.value,
-  (val) => {
-    if (val) {
-      chat.value = false;
+  sse.value = new EventSource(`/api/ingest?url=${newUrl}`);
+  sse.value.onmessage = (event) => {
+    if (JSON.parse(event.data).message) {
+      showBot.value = true;
     }
-  }
-);
-watch(
-  () => chat.value,
-  (val) => {
-    if (val) {
-      modal.value = false;
-    }
-  }
-);
+
+    progress.value = Number(JSON.parse(event.data).progress);
+  };
+});
+const messages = ref([]) as Ref<string[]>;
+const progress = ref(0);
+const thisProgress = computed(() => {
+  return progress.value;
+});
+const send = async () => {
+  const { data } = await useFetch(
+    "/api/search?url=" + url.value + "&prompt=" + prompt_.value
+  ).text();
+  prompt_.value = "";
+  messages.value.push(unref(data) as string);
+};
 </script>
 <template>
-  <Icon
-    icon="logos:openai-icon"
-    class="x4 dark:invert btn-icon br fixed m-8"
-    @click="modal = !modal"
-  />
+        <div v-if="!showBot">{{ (thisProgress * 100).toFixed(2) }}%</div>
+        <input type="text" class="input-text" v-model="url" />
 
-  <SpeechToText v-if="modal">
-    <template #output="{ output }">
-      <section class="row center mx-auto">
-        <footer
-          class="row bottom-0 fixed m-8 px-8 py-4 sh w-1/2 rounded-lg"
-          v-if="output"
+        <div
+          class="br fixed sh p-4 rounded-lg bg-gray-100 max-w-2xl max-h-2xl overflow-scroll"
         >
-          {{ output }}
-          <Icon
-            icon="mdi-send"
-            class="btn-icon right-2 absolute x2"
-            @click="send(output)"
-            v-if="output"
-          />
-        </footer>
-      </section>
-
-      <Icon
-        icon="mdi-chat"
-        class="btn-icon br fixed m-8 mb-28 mr-16"
-        @click="toggleChat"
-      />
-    </template>
-  </SpeechToText>
-  <Upload />
-  <ChatMessage v-if="chat" />
+          <div class="mb-48">
+            <div v-for="message in messages" class="mb-4">
+              <div v-html="message"></div>
+            </div>
+          </div>
+          <div class="row center gap-4">
+            <input
+              type="text"
+              class="input-text"
+              v-model="prompt_"
+              @keyup.enter="send"
+            />
+            <img :src="url + '/favicon.ico'" class="x2" @click="showBot = !showBot" />
+          </div>
+        </div>
 </template>
